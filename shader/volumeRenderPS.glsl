@@ -124,7 +124,7 @@ void main() {
 			// 	tfCol = vec4(0, 0, 0, 0);
 			if (tfCol.a > 0.f) {
 				color.rgb = color.rgb + (1.f - color.a) * tfCol.a * tfCol.rgb;
-				color.a = color.a + (1.f - color.a) * tfCol.a;
+				 color.a = color.a + (1.f - color.a) * tfCol.a;
 				if (color.a > SkipAlpha)
 					break;
 			}
@@ -135,6 +135,5 @@ void main() {
 		tAcc += dt;
 		++stepCnt;
 	} while (tAcc < tExit && stepCnt <= realMaxStepCnt);
-
 	gl_FragColor = color;
 }

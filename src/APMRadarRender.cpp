@@ -363,11 +363,6 @@ void RadarRender::GenerateIsoMesh(double pd, bool isround, bool isSymmetryX)
 		}
 		m_lines_normals->push_back(osg::Vec4f(points[i].x(), points[i].y(), nor.x(), nor.y()));
 	}
-	//for (int i = 1; i < m_lines_normals->size(); i++)
-	//{
-	//	m_lines_normals->addIndice(i - 1);
-	//	m_lines_normals->addIndice(i);
-	//}
 
 	std::vector<osg::Vec3f> points_1;
 	radar->getTestPoints(points_1);

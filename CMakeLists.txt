@@ -22,7 +22,7 @@ find_package(PCL REQUIRED)
 add_definitions(${PCL_DEFINITIONS})
 
 # 查找Qt5依赖
-set(QT_PATH "F:/QT/5.12.12/msvc2017_64") 
+set(QT_PATH "F:/QTT/5.12.12/msvc2017_64") 
 set(CMAKE_PREFIX_PATH ${QT_PATH}/lib/cmake)
 find_package(Qt5 COMPONENTS Core Widgets Gui REQUIRED)
 

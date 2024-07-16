@@ -163,7 +163,7 @@ void concave::_lowerTangent(std::vector<Vec2_X> &pointset, std::vector<int> &low
 		}
 		lower.push_back(i);
 	}
-	lower.pop_back();
+	if( lower.size() )  lower.pop_back();
 }
 
 void concave::_upperTangent(std::vector<Vec2_X> &pointset, std::vector<int> &upper)
@@ -177,7 +177,7 @@ void concave::_upperTangent(std::vector<Vec2_X> &pointset, std::vector<int> &upp
 		}
 		upper.push_back(i);
 	}
-	upper.pop_back();
+	if( upper.size() )  upper.pop_back();
 }
 
 float concave::_cross(Vec2_X &v0, Vec2_X &v1, Vec2_X &v2)

@@ -12,7 +12,7 @@ class streamline_cpu : public QWidget
     Q_OBJECT
 
 public:
-    streamline_cpu(QWidget* parent = nullptr):QWidget(parent) {
+    streamline_cpu(QWidget* parent = nullptr):  QWidget(parent) {
         ui.setupUi(this);
     }
     /*

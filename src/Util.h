@@ -1,5 +1,7 @@
 #pragma once
 #include <osgViewer/Viewer>
+#include <functional>
+using namespace std;
 
 struct llhRange{
 	double minLatitude;
@@ -22,7 +24,40 @@ struct llhRange{
 	:minLatitude(osg::DegreesToRadians(_minLatitude)), maxLatitude(osg::DegreesToRadians(_maxLatitude)),
 		minLongtitude(osg::DegreesToRadians(_minLongitute+180)), maxLongtitude(osg::DegreesToRadians(_maxLongitute+180)),
 		minHeight(_minHeight), maxHeight(_maxHeight){}
+	llhRange(double _minLatitude, double _maxLatitude,
+		double _minLongitute, double _maxLongitute,
+		double _minHeight, double _maxHeight,int )
+		:minLatitude(_minLatitude), maxLatitude(_maxLatitude),
+		minLongtitude(_minLongitute ), maxLongtitude(_maxLongitute ),
+		minHeight(_minHeight), maxHeight(_maxHeight) {}
+
+	bool operator==(const llhRange& other) const {
+		return minLatitude == other.minLatitude && maxLatitude == other.maxLatitude &&
+			minLongtitude == other.minLongtitude && maxLongtitude == other.maxLongtitude &&
+			minHeight == other.minHeight && maxHeight == other.maxHeight;
+	}
+	// ÷ÿ‘ÿ ‰≥ˆ‘ÀÀ„∑˚
+	friend ostream& operator<<(ostream& os, const llhRange& range) {
+		os << "llhRange("
+			<< "minLatitude: " << range.minLatitude << ", "
+			<< "maxLatitude: " << range.maxLatitude << ", "
+			<< "minLongitude: " << range.minLongtitude << ", "
+			<< "maxLongitude: " << range.maxLongtitude << ", "
+			<< "minHeight: " << range.minHeight << ", "
+			<< "maxHeight: " << range.maxHeight << ")"<<endl;
+		return os;
+	}
+
 };
+
+struct llhRangeHash {
+	size_t operator()(const llhRange& c) const {
+		return hash<double>()(c.minLatitude) ^ hash<double>()(c.maxLatitude) ^
+			hash<double>()(c.minLongtitude) ^ hash<double>()(c.maxLongtitude) ^
+			hash<double>()(c.minHeight) ^ hash<double>()(c.maxHeight);
+	}
+};
+
 inline void llh2xyz_Sphere(llhRange llh,
 	float _lat, float _lon, float _h, float& x, float& y, float& z) {
 	double hDlt = llh.maxHeight - llh.minHeight;
@@ -77,6 +112,17 @@ struct ModelViewProjectionMatrixCallback : public osg::Uniform::Callback
 	}
 
 	osg::Camera* _camera;
+};
+
+struct ColorCallBack : public osg::Uniform::Callback {
+	ColorCallBack(osg::Vec4* color) 
+		: mainColor(color)
+	{}
+
+	virtual void operator()(osg::Uniform* uniform, osg::NodeVisitor* nv) {
+		uniform->set(mainColor);
+	}
+	osg::Vec4* mainColor;
 };
 
 struct CameraEyeCallback : public osg::Uniform::Callback

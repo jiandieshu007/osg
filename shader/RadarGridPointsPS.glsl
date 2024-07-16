@@ -9,7 +9,7 @@ in float dvalue;
 void main()
 {
 	if(dvalue > curd)
-		fragmentColor = vec4(78.0/255, 201.0/255, 176.0/255, 1.0);
+		fragmentColor = vec4(1, 0, 0.0, 1.0 );
 	else
-		discard;//fragmentColor = vec4(0, 0, 1.0, 1.0);
+		discard;//fragmentColor = vec4(0, 0, 1.0, 1.0); vec4(78.0/255, 201.0/255, 176.0/255, 1.0)
 }

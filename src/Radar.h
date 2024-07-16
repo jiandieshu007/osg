@@ -1,26 +1,29 @@
 ﻿#pragma once
 #include <osg/ShapeDrawable>
 #include <osg/Texture3D>
+#include <osg/LineWidth>
+#include <osg/PrimitiveSet>
+#include<osg/PolygonMode>
+#include <osg/Texture2D>
+#include <osgViewer/Viewer>
+#include <osg/Group>
+#include <osgUtil/PolytopeIntersector>
+
 #include "Util.h"
 #include "APMRadarRender.h"
 #include "volumeRender.cpp"
+#include <iostream>
 
-namespace Radar {
-	RadarRender* _radarrender;
-	int voxels[256][256][256];
-	unsigned char* voxelsData = new unsigned char[sizeof(float) * 256 * 256 * 256];
-	llhRange _range;
 
-	void initRadar(llhRange range = llhRange())
-	{
-		for (int i = 0; i < 256; i++)
-			for (int j = 0; j < 256; j++)
-				for (int k = 0; k < 256; k++)
-					voxels[i][j][k] = 0;
-		_range = range;
-	}
 
-	void transPointsToVoxels(osg::ref_ptr<osg::Vec3Array> points, float curd, llhRange smallRange)
+namespace VoxelRader {
+
+	inline RadarRender* _radarrender;
+	inline int voxels[256][256][256];
+	inline unsigned char* voxelsData = new unsigned char[sizeof(float) * 256 * 256 * 256];
+	inline llhRange _range;
+	inline void initRadar(llhRange llh) { _range = llh; }
+	inline void transPointsToVoxels(osg::ref_ptr<osg::Vec3Array> points, float curd, llhRange smallRange)
 	{
 		int mid = 128;
 		std::vector<std::vector<std::vector<int>>> localVoxels(256, std::vector<std::vector<int>>(256, std::vector<int>(256, 0)));
@@ -62,7 +65,7 @@ namespace Radar {
 
 	}
 
-	void submitRadar(osg::Group* grp)
+	inline void submitRadar(osg::Group* grp)
 	{
 		osg::ref_ptr<osg::Texture3D> voxelsTexture = new osg::Texture3D;
 		osg::ref_ptr<osg::Image> voxelsImage = new osg::Image;
@@ -72,12 +75,10 @@ namespace Radar {
 		voxelsTexture->setImage(voxelsImage);
 
 
-
-
 		static const std::array<uint32_t, 3> dim = { 256, 256, 256 };
-		static const std::array<float, 2> lonRng = { float (_range.minLongtitude / M_PI * 180.f - 360.f), float (_range.maxLongtitude / M_PI * 180.f - 360.f) };
-		static const std::array<float, 2> latRng = { float(_range.minLatitude / M_PI * 180.f), float (_range.maxLatitude / M_PI * 180.f) };
-		static const std::array<float, 2> hRng = { float (_range.minHeight), float(_range.maxHeight) };
+		static const std::array<float, 2> lonRng = { float(_range.minLongtitude / M_PI * 180.f - 360.f), float(_range.maxLongtitude / M_PI * 180.f - 360.f) };
+		static const std::array<float, 2> latRng = { float(_range.minLatitude / M_PI * 180.f), float(_range.maxLatitude / M_PI * 180.f) };
+		static const std::array<float, 2> hRng = { float(_range.minHeight), float(_range.maxHeight) };
 		static const float hScale = 150.f;
 
 		auto dvr = std::make_shared<SciVis::ScalarViser::DirectVolumeRenderer>();
@@ -95,7 +96,7 @@ namespace Radar {
 		grp->addChild(dvr->GetGroup());
 	}
 
-	void addRadar(llhRange range = llhRange())
+	inline void addRadar(llhRange range = llhRange())
 	{
 		float maxAngle = 91;
 		float maxLength = 20;
@@ -116,10 +117,10 @@ namespace Radar {
 			for (int j = 0; j < 256; j++)
 				for (int k = 0; k < 256; k++)
 					voxelsData[i * 256 * 256 + j * 256 + k] = voxels[j][k][i];
-		
+
 	}
 
-	void ExportRadar()
+	inline void ExportRadar()
 	{
 		std::string filePath = std::string(OSG_3D_VIS_DATA_PREFIX) + "OutPutVoxelData.binary";
 		// 打开文件进行二进制写入
@@ -144,148 +145,128 @@ namespace Radar {
 
 
 	}
-
-	osg::ref_ptr<osg::Geode> OldGenerate(osg::Group* grp, osg::Camera* camera, llhRange range = llhRange())
-	{
-
-		float maxAngle = 91;
-		float maxLength = 20;
-		float maxSearchRange = 1;
-		float minSearchRange = 1;
-		float DetectionProbability = 99.9;
-		_radarrender = new RadarRender();
-		_radarrender->radar->MakeRGridFromFile("cosec2.out");
-		_radarrender->radar->SetMaxAngle_length_box(maxAngle, maxLength, maxSearchRange, minSearchRange);
-		_radarrender->radar->UpdatePara();
-		_radarrender->radar->UpdateDValue();
-		_radarrender->SetNewPd(DetectionProbability * 0.01);
-
-		// 点绘制模式
-		osg::ref_ptr<osg::Geode> pointGeode = new osg::Geode;
-		osg::ref_ptr<osg::Geometry> pointGeometry = new osg::Geometry;
-		pointGeometry->setVertexAttribArray(0, _radarrender->m_grid_points, osg::Array::BIND_PER_VERTEX);
-
-		osg::ref_ptr<osg::Shader> pointVertexShader = new osg::Shader(osg::Shader::VERTEX);
-		osg::ref_ptr<osg::Shader> pointFragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-		pointVertexShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX)+"RadarGridPointsVS.glsl");
-		pointFragmentShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "RadarGridPointsPS.glsl");
-		osg::ref_ptr<osg::Program> pointProgram = new osg::Program;
-		pointProgram->addShader(pointVertexShader);
-		pointProgram->addShader(pointFragmentShader);
-		osg::ref_ptr<osg::StateSet> pointStateSet = pointGeode->getOrCreateStateSet();
-		pointStateSet->setAttributeAndModes(pointProgram);
-
-		// 设置curd
-		osg::ref_ptr<osg::Uniform> curdUniform = new osg::Uniform("curd", float(_radarrender->radar->m_curd));
-		pointStateSet->addUniform(curdUniform);
-
-		// 绑定mvp
-		osg::Uniform* mvpUniform = new osg::Uniform(osg::Uniform::FLOAT_MAT4, "mvp");
-		mvpUniform->setUpdateCallback(new ModelViewProjectionMatrixCallback(camera));
-		pointStateSet->addUniform(mvpUniform);
-
-		osg::ref_ptr<osg::DrawArrays> radar_points = new osg::DrawArrays(osg::PrimitiveSet::POINTS, 0, _radarrender->m_grid_points->size());
-		pointGeometry->addPrimitiveSet(radar_points);
-		pointGeode->addDrawable(pointGeometry);
-		
-		// 线绘制模式
-		osg::ref_ptr<osg::Geode> lineGeode = new osg::Geode;
-		osg::ref_ptr<osg::Geometry> lineGeometry = new osg::Geometry;
-
-		osg::ref_ptr<osg::Vec2Array> m_lines_normals_pos = new osg::Vec2Array();
-		osg::ref_ptr<osg::Vec3Array> m_lines_normals_pos3 = new osg::Vec3Array();
-		osg::ref_ptr<osg::Vec2Array> m_lines_normals_nor = new osg::Vec2Array();
+};
+namespace Radar {
 
 
-		// 求不同i的情况下，_radarrender->m_lines_normals->at(i).x()中最大值
-		double maxX = 0;
-		for (int i = 0; i < _radarrender->m_lines_normals->size(); i++)
-			if (maxX < _radarrender->m_lines_normals->at(i).x())
-				maxX = _radarrender->m_lines_normals->at(i).x();
 
-		for (int i = 0; i < _radarrender->m_lines_normals->size(); i++)
-		{
-			double transX, transY, transZ;
-			llh2xyz_Ellipsoid(range, _radarrender->m_lines_normals->at(i).x() / maxX, 0, _radarrender->m_lines_normals->at(i).y() / maxX, transX, transY, transZ);
-			//m_lines_normals_pos->push_back(osg::Vec2(transX, transZ));
-			m_lines_normals_pos3->push_back(osg::Vec3(transX, transY, transZ));
-			m_lines_normals_pos->push_back(osg::Vec2(_radarrender->m_lines_normals->at(i).x() / maxX, _radarrender->m_lines_normals->at(i).y() / maxX));
-			m_lines_normals_nor->push_back(osg::Vec2(_radarrender->m_lines_normals->at(i).z(), _radarrender->m_lines_normals->at(i).w()));
+	class Radar {
+	public:
+		Radar() {
+			float maxAngle = 91;
+			float maxLength = 20;
+			float maxSearchRange = 1;
+			float minSearchRange = 1;
+			float DetectionProbability = 99.9;
+			_radarrender = new RadarRender();
+			_radarrender->radar->MakeRGridFromFile("../data/cosec2.out");
+			_radarrender->radar->SetMaxAngle_length_box(maxAngle, maxLength, maxSearchRange, minSearchRange);
+			_radarrender->radar->UpdatePara();
+			_radarrender->radar->UpdateDValue();
+			_radarrender->SetNewPd(DetectionProbability * 0.01);
+			GenerateRT_sceneDepthTexture();
 		}
-		lineGeometry->setVertexAttribArray(0, m_lines_normals_pos3, osg::Array::BIND_PER_VERTEX);
-		lineGeometry->setVertexAttribArray(1, m_lines_normals_nor, osg::Array::BIND_PER_VERTEX);
+		RadarRender* _radarrender;
+		llhRange _range;
+		int width, height;
 
-		osg::ref_ptr<osg::Shader> lineVertexShader = new osg::Shader(osg::Shader::VERTEX);
-		osg::ref_ptr<osg::Shader> lineFragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-		lineVertexShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "RadarLineWithNormalVS.glsl");
-		lineFragmentShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "RadarLineWithNormalPS.glsl");
-		osg::ref_ptr<osg::Program> lineProgram = new osg::Program;
-		lineProgram->addShader(lineVertexShader);
-		lineProgram->addShader(lineFragmentShader);
-		osg::ref_ptr<osg::StateSet> lineStateSet = lineGeode->getOrCreateStateSet();
-		lineStateSet->setAttributeAndModes(lineProgram);
+		osg::Uniform* mvpUniform;
+		osg::ref_ptr<osg::Camera> maincamera;
 
-		// 设置颜色
-		osg::ref_ptr<osg::Uniform> colorUniform = new osg::Uniform("mainColor", osg::Vec4f(78.0 / 255, 201.0 / 255, 176.0 / 255, 1.0));
-		lineStateSet->addUniform(colorUniform);
+		std::vector<llhRange> ranges;
+		std::vector<osg::ref_ptr<osg::Geometry>> Geos;
+		osg::ref_ptr<osg::Geode> rt;
 
-		// 绑定mvp
-		lineStateSet->addUniform(mvpUniform);
 
-		osg::ref_ptr<osg::DrawArrays> radar_lines = new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP, 0, m_lines_normals_pos->size());
-		lineGeometry->addPrimitiveSet(radar_lines);
-		lineGeode->addDrawable(lineGeometry);
+		void submit(osgViewer::Viewer& viewer, osg::Camera* mainCamera, osg::ref_ptr<osg::Group> root);
+		void setCamera(osg::Camera* cam) {
+			maincamera = cam;
+			// generate mvp
+			mvpUniform = new osg::Uniform(osg::Uniform::FLOAT_MAT4, "mvp");
+			mvpUniform->setUpdateCallback(new ModelViewProjectionMatrixCallback(maincamera));
+		};
+		void Addllh(llhRange range) { ranges.push_back(range); Geos.push_back(Generate(ranges.back())); }
+		//void Splitllh();
+		osg::ref_ptr<osg::Geometry>  Generate(llhRange range);
 
-		// 面绘制模式
-		osg::ref_ptr<osg::Geode> surfaceGeode = new osg::Geode;
-		osg::ref_ptr<osg::Geometry> surfaceGeometry = new osg::Geometry;
+		void updateR(double value);
+		void updateG(double value);
+		void updateB(double value);
+		void updateA(double value);
+		void updateLineWidth(double value);
+		void updateDrawStyle(int index);
+		void updateOverlapR(double value);
+		void updateOverlapG(double value);
+		void updateOverlapB(double value);
+		void updateOverlapA(double value);
 
-		surfaceGeometry->setVertexAttribArray(0, m_lines_normals_pos, osg::Array::BIND_PER_VERTEX);
-		surfaceGeometry->setVertexAttribArray(1, m_lines_normals_nor, osg::Array::BIND_PER_VERTEX);
+		osg::ref_ptr<osg::Texture2D> sceneColorTexture;
+		osg::ref_ptr<osg::Texture2D> sceneDepthTexture;
 
-		osg::ref_ptr<osg::Shader> surfaceVertexShader = new osg::Shader(osg::Shader::VERTEX);
-		osg::ref_ptr<osg::Shader> surfaceFragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-		osg::ref_ptr<osg::Shader> surfaceGeometryShader = new osg::Shader(osg::Shader::GEOMETRY);
-		surfaceVertexShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "RadarRoundScanVS.glsl");
-		surfaceFragmentShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "RadarRoundScanPS.glsl");
-		surfaceGeometryShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "RadarRoundScanGS.glsl");
-		osg::ref_ptr<osg::Program> surfaceProgram = new osg::Program;
-		surfaceProgram->addShader(surfaceVertexShader);
-		surfaceProgram->addShader(surfaceFragmentShader);
-		surfaceProgram->addShader(surfaceGeometryShader);
-		
-		osg::ref_ptr<osg::StateSet> surfaceStateSet = surfaceGeode->getOrCreateStateSet();
-		surfaceStateSet->setAttributeAndModes(surfaceProgram);
+		osg::ref_ptr<osg::Texture2D> radarColorTexture;
+		osg::ref_ptr<osg::Texture2D> radarDepthTexture;
 
-		// 设置颜色
-		surfaceStateSet->addUniform(colorUniform);
+		void setwh(int a, int b) { width = a, height = b; }
+		void GenerateRT_sceneDepthTexture() {
+			sceneColorTexture = new osg::Texture2D;
+			sceneColorTexture->setTextureSize(width, height);
+			sceneColorTexture->setSourceFormat(GL_RGBA);
+			sceneColorTexture->setInternalFormat(GL_RGBA32F_ARB);
+			sceneColorTexture->setSourceType(GL_FLOAT);
+			sceneColorTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+			sceneColorTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
 
-		// 设置角度
-		const float startAngle = (0.0 / 180.0) * M_PI;
-		const float endAngle = (360.0 / 180.0) * M_PI;
-		const float stepAngle = (endAngle - startAngle) / 20.0;
-		osg::ref_ptr<osg::Uniform> startAngleUniform = new osg::Uniform("startAngle", startAngle);
-		surfaceStateSet->addUniform(startAngleUniform);
-		osg::ref_ptr<osg::Uniform> stepAngleUniform = new osg::Uniform("stepAngle", stepAngle);
-		surfaceStateSet->addUniform(stepAngleUniform);
+			radarColorTexture = new osg::Texture2D;	
+			radarColorTexture->setTextureSize(width, height);
+			radarColorTexture->setSourceFormat(GL_RGBA);
+			radarColorTexture->setInternalFormat(GL_RGBA32F_ARB);
+			radarColorTexture->setSourceType(GL_FLOAT);
+			radarColorTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+			radarColorTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
 
-		// 绑定mvp
-		surfaceStateSet->addUniform(mvpUniform);
+			sceneDepthTexture = new osg::Texture2D;
+			sceneDepthTexture->setTextureSize(width, height);
+			sceneDepthTexture->setSourceFormat(GL_DEPTH_COMPONENT);
+			sceneDepthTexture->setSourceType(GL_FLOAT);
+			sceneDepthTexture->setInternalFormat(GL_DEPTH_COMPONENT);
+			sceneDepthTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+			sceneDepthTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+			sceneDepthTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+			sceneDepthTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
 
-		// 变换到地球坐标系
-		osg::ref_ptr<osg::Uniform> llh_lowerUniform = new osg::Uniform("llh_lower", osg::Vec3f(range.minLatitude * 180 / M_PI, range.minLongtitude * 180 / M_PI, range.minHeight));
-		surfaceStateSet->addUniform(llh_lowerUniform);
-		osg::ref_ptr<osg::Uniform> llh_upperUniform = new osg::Uniform("llh_upper", osg::Vec3f(range.maxLatitude * 180 / M_PI, range.maxLongtitude * 180 / M_PI, range.maxHeight));
-		surfaceStateSet->addUniform(llh_upperUniform);
+			radarDepthTexture = new osg::Texture2D;
+			radarDepthTexture->setTextureSize(width, height);
+			radarDepthTexture->setSourceFormat(GL_DEPTH_COMPONENT);
+			radarDepthTexture->setSourceType(GL_FLOAT);
+			radarDepthTexture->setInternalFormat(GL_DEPTH_COMPONENT);
+			radarDepthTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+			radarDepthTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+			radarDepthTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+			radarDepthTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+		}
 
-		osg::ref_ptr<osg::DrawArrays> radar_lines_to_surfaces = new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP, 0, m_lines_normals_pos->size());
-		surfaceGeometry->addPrimitiveSet(radar_lines_to_surfaces);
-		surfaceGeode->addDrawable(surfaceGeometry);
+		osg::ref_ptr<osg::Camera> addRadarDrawPass();
+		osg::ref_ptr<osg::Camera> addBlendPass();
+		// 创建一个包含全屏四边形的几何体
+		osg::ref_ptr<osg::Geometry> createFullScreenQuad() {
+			osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
+			osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array();
+			osg::ref_ptr<osg::Vec2Array> vt = new osg::Vec2Array();
+			v->push_back(osg::Vec3(-1, -1, 0.0));
+			v->push_back(osg::Vec3(1, -1, 0.0));
+			v->push_back(osg::Vec3(1, 1, 0.0));
+			v->push_back(osg::Vec3(-1, 1, 0.0));
 
-		// Blend Rendering Related 使用颜色的ALPHA通道进行透明材质渲染
-		surfaceStateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
-		surfaceStateSet->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+			vt->push_back(osg::Vec2(0, 0));
+			vt->push_back(osg::Vec2(1, 0));
+			vt->push_back(osg::Vec2(1, 1));
+			vt->push_back(osg::Vec2(0, 1));
+			geometry->setVertexAttribArray(0, v.get(), osg::Array::BIND_PER_VERTEX);
+			geometry->setVertexAttribArray(1, vt.get(), osg::Array::BIND_PER_VERTEX);
+			osg::ref_ptr<osg::DrawArrays> quad = new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, 4);
+			geometry->addPrimitiveSet(quad.get());
+			return geometry;
+		}
+	};
 
-		return surfaceGeode;
-	}
-}
+};

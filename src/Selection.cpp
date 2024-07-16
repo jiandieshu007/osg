@@ -23,6 +23,7 @@ namespace Selection {
 		mainCamera->attach(osg::Camera::COLOR_BUFFER, this->screenColorTexture);
 		mainCamera->attach(osg::Camera::DEPTH_BUFFER, this->screenDepthTexture);
 
+
 		/* multi-pass creation */
 		osg::ref_ptr<osg::Camera> slaveCamera = this->createSegmentDrawPass(mainCamera);
 		slaveCamera->setGraphicsContext(mainCamera->getGraphicsContext());

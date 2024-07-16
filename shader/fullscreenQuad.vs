@@ -8,5 +8,5 @@ out vec2 v_textureCoordinates;
 void main()
 {
     v_textureCoordinates = TexCoord;
-    gl_Position = vec4(Vertex.x, Vertex.y, -1.0, 1.0);
+    gl_Position = vec4(Vertex, 1.0);
 }

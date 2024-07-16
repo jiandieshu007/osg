@@ -27,7 +27,7 @@
 #include "VolumeLIC.h"
 #include "VortexDetect.h"
 #include "Radar.h"
-
+#include "radarui.h"
 
 // use high definition earth image
 // #define USE_HD_EARTH_IMAGE
@@ -53,7 +53,7 @@ static inline osg::ref_ptr<osg::CoordinateSystemNode> createEarth() {
 		
 	geode->getOrCreateStateSet()->setTextureAttributeAndModes(
 		0, new osg::Texture2D(osgDB::readImageFile(filename)));
-;
+	//geode->getOrCreateStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
 	osg::ref_ptr<osg::CoordinateSystemNode> csn = new osg::CoordinateSystemNode;
 	osg::EllipsoidModel* epmodel = new osg::EllipsoidModel();
 	csn->setEllipsoidModel(epmodel);
@@ -297,8 +297,6 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-   
-    
 	osgViewer::Viewer viewer;
 	viewer.setUpViewInWindow(300, 300, 1920, 1080);
 
@@ -310,18 +308,19 @@ int main(int argc, char *argv[])
 	camera->setProjectionMatrixAsPerspective(45.0, 1.78, 0.1, 100.0);
 
 	// create earth
-	//osg::ref_ptr<osg::CoordinateSystemNode> csn = createEarth();
-	//root->addChild(csn);
+	osg::ref_ptr<osg::CoordinateSystemNode> csn = createEarth();
+	root->addChild(csn);
 
+	//// 
 
 	///* Show Main Window */
 	//auto mainWindow = new main_window();
 	//mainWindow->show();
 
 
-	/* show light model */
-	auto geode = createLightModel(camera);
-	root->addChild(geode);
+	///* show light model */
+	//auto geode = createLightModel(camera);
+	//root->addChild(geode);
 
 
 	///* Show Streamline: GPU */
@@ -349,14 +348,25 @@ int main(int argc, char *argv[])
 	//root->addChild(vlicGeode);
 
 	///* Show Radar */
-	//Radar::initRadar(llhRange(25.f, 40.f, 100.f, 115.f, 1.f, 6000.f));
-	//Radar::addRadar(llhRange(25.f, 35.f, 105.f, 115.f, 1.f, 6000.f));
-	//Radar::addRadar(llhRange(28.f, 38.f, 102.f, 112.f, 1.f, 6000.f));
-	//Radar::addRadar(llhRange(29.f, 39.f, 103.f, 113.f, 1.f, 6000.f));
-	//Radar::ExportRadar();
-	//Radar::submitRadar(root);
 
-	/* Show Vortex Detect */
+	//VoxelRader::initRadar(llhRange(25.f, 40.f, 100.f, 115.f, 1.f, 6000.f));
+	//VoxelRader::addRadar(llhRange(25.f, 35.f, 105.f, 115.f, 1.f, 6000.f));
+	//VoxelRader::addRadar(llhRange(28.f, 38.f, 102.f, 112.f, 1.f, 6000.f));
+	//VoxelRader::addRadar(llhRange(29.f, 39.f, 103.f, 113.f, 1.f, 6000.f));
+	//VoxelRader::ExportRadar();
+	//VoxelRader::submitRadar(root);
+
+	RadarUi* rui = new RadarUi();
+	Radar::Radar* ra = new Radar::Radar();
+	rui->setRad(ra);
+	ra->setwh(1920, 1080);
+	ra->setCamera(camera.get());
+	ra->Addllh(llhRange(25.l, 35., 105., 115., 1., 6000.));
+	ra->Addllh(llhRange(29., 39., 103., 113., 1., 6000.));
+	ra->submit(viewer,camera ,root);
+	rui->show();
+
+	///* Show Vortex Detect */
 	//osg::ref_ptr<osg::Geode> vortexGeode = VortexDetect::Generate(root, camera.get(), llhRange(-10.f, 52.f, 99.f, 150.f, 100000.f, 2000000.f));
 	//root->addChild(vortexGeode);
 
@@ -366,7 +376,7 @@ int main(int argc, char *argv[])
 
 
 
-	/* Show Point Cloud Loader */
+	///* Show Point Cloud Loader */
 	//OSGPCDLoader* loader = new OSGPCDLoader();
 	//loader->LoadFromFileXYZRGB(std::string(OSG_3D_VIS_DATA_PREFIX) + "milk_cartoon_all_small_clorox.pcd");
 	//loader->LoadFromFileXYZRGB(std::string(OSG_3D_VIS_DATA_PREFIX) +"CSite1_orig-utm.pcd");

@@ -99,14 +99,7 @@ public:
 	osg::ref_ptr<osg::Vec4Array> m_lines_normals = new osg::Vec4Array();
 	//ptr<Mesh<vec3f, unsigned int>> m_grid_points;
 	osg::ref_ptr<osg::Vec3Array> m_grid_points = new osg::Vec3Array();
-	//ptr<Mesh<vec3f, unsigned short>> m_x_line;
-	//ptr<Mesh<vec3f, unsigned short>> m_x_point;
-	//ptr<Mesh<vec3f, unsigned short>> m_y_line;
-	//ptr<Mesh<vec3f, unsigned short>> m_y_point;
-	//ptr<Mesh<vec3f, unsigned short>> m_z_line;
-	//ptr<Mesh<vec3f, unsigned short>> m_z_point;
-	//ptr<Mesh<vec4f, unsigned short>> m_lines_normals_round;
-	//ptr<Mesh<vec4f, unsigned short>> m_Quad;
+
 	double m_curpd;
 
 public:
