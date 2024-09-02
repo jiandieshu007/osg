@@ -19,9 +19,5 @@ void RadarUi::setConnect() {
 	connect(ui->ColorA, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &RadarUi::updateA);
 	connect(ui->lineWidth, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &RadarUi::updateLineWidth);
 	connect(ui->DisplayList, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &RadarUi::updateDrawStyle);
-	connect(ui->OverLapR, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &RadarUi::updateOverlapR);
-	connect(ui->OverLapG, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &RadarUi::updateOverlapG);
-	connect(ui->OverLapB, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &RadarUi::updateOverlapB);
-	connect(ui->OverLapA, static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), this, &RadarUi::updateOverlapA);
 }
 

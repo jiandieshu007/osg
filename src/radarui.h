@@ -37,18 +37,6 @@ public:
 	void updateDrawStyle(int index) {
 		rad->updateDrawStyle(index);
 	};
-	void updateOverlapR(double value) {
-		rad->updateOverlapR(value);
-	};
-	void updateOverlapG(double value) {
-		rad->updateOverlapG(value);
-	};
-	void updateOverlapB(double value) {
-		rad->updateOverlapB(value);
-	};
-	void updateOverlapA(double value) {
-		rad->updateOverlapA(value);
-	};
 private:
     Ui::RadarUi *ui;
 	Radar::Radar* rad;

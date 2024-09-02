@@ -13,7 +13,22 @@
 #include "APMRadarRender.h"
 #include "volumeRender.cpp"
 #include <iostream>
+#include <osgDB/WriteFile>
 
+class CaptureCallback : public osg::Camera::DrawCallback {
+public:
+	CaptureCallback(osg::Texture2D* texture, string str) : _texture(texture),file_name(str) {}
+
+	virtual void operator()(osg::RenderInfo& renderInfo) const {
+		osg::Image* image = new osg::Image;
+		image->readPixels(0, 0, _texture->getTextureWidth(), _texture->getTextureHeight(), GL_RGBA, GL_FLOAT);
+		osgDB::writeImageFile(*image, file_name);
+	}
+
+private:
+	osg::ref_ptr<osg::Texture2D> _texture;
+	string file_name;
+};
 
 
 namespace VoxelRader {
@@ -30,7 +45,7 @@ namespace VoxelRader {
 
 		// 求smallRange在_range中的比例，得到中心与半径
 		int centerX = ((smallRange.maxLatitude + smallRange.minLatitude) / 2 - _range.minLatitude) / (_range.maxLatitude - _range.minLatitude) * 256;
-		int centerY = ((smallRange.maxLongtitude + smallRange.minLongtitude) / 2 - _range.minLongtitude) / (_range.maxLongtitude - _range.minLongtitude) * 256;
+		int centerY = ((smallRange.maxLongitude + smallRange.minLongitude) / 2 - _range.minLongitude) / (_range.maxLongitude - _range.minLongitude) * 256;
 		float rRatio = (smallRange.maxLatitude - smallRange.minLatitude) / (_range.maxLatitude - _range.minLatitude);
 
 		// 清空localVoxels为false
@@ -76,7 +91,7 @@ namespace VoxelRader {
 
 
 		static const std::array<uint32_t, 3> dim = { 256, 256, 256 };
-		static const std::array<float, 2> lonRng = { float(_range.minLongtitude / M_PI * 180.f - 360.f), float(_range.maxLongtitude / M_PI * 180.f - 360.f) };
+		static const std::array<float, 2> lonRng = { float(_range.minLongitude / M_PI * 180.f - 360.f), float(_range.maxLongitude / M_PI * 180.f - 360.f) };
 		static const std::array<float, 2> latRng = { float(_range.minLatitude / M_PI * 180.f), float(_range.maxLatitude / M_PI * 180.f) };
 		static const std::array<float, 2> hRng = { float(_range.minHeight), float(_range.maxHeight) };
 		static const float hScale = 150.f;
@@ -146,6 +161,7 @@ namespace VoxelRader {
 
 	}
 };
+
 namespace Radar {
 
 
@@ -166,27 +182,39 @@ namespace Radar {
 			_radarrender->SetNewPd(DetectionProbability * 0.01);
 			GenerateRT_sceneDepthTexture();
 		}
+
 		RadarRender* _radarrender;
 		llhRange _range;
-		int width, height;
+		int width=1920, height=1080;
+		const double EARTH_RADIUS = 6371.0;
 
 		osg::Uniform* mvpUniform;
 		osg::ref_ptr<osg::Camera> maincamera;
-
-		std::vector<llhRange> ranges;
-		std::vector<osg::ref_ptr<osg::Geometry>> Geos;
-		osg::ref_ptr<osg::Geode> rt;
-
-
-		void submit(osgViewer::Viewer& viewer, osg::Camera* mainCamera, osg::ref_ptr<osg::Group> root);
 		void setCamera(osg::Camera* cam) {
 			maincamera = cam;
 			// generate mvp
 			mvpUniform = new osg::Uniform(osg::Uniform::FLOAT_MAT4, "mvp");
 			mvpUniform->setUpdateCallback(new ModelViewProjectionMatrixCallback(maincamera));
 		};
-		void Addllh(llhRange range) { ranges.push_back(range); Geos.push_back(Generate(ranges.back())); }
-		//void Splitllh();
+
+
+		//6,375,827   6356752.3142;
+		std::vector<llhRange> ranges;
+		std::vector<osg::ref_ptr<osg::Geometry>> Geos;
+
+		//for actualy draw 
+		osg::ref_ptr<osg::Geode> rt;
+
+		// for blend pass
+		osg::ref_ptr<osg::Geometry> forTureRadarColor;
+
+		void submit(osgViewer::Viewer& viewer, osg::Camera* mainCamera, osg::ref_ptr<osg::Group> root);
+
+		void Addllh(llhRange range)
+		{
+			ranges.push_back(range);
+			Geos.push_back(Generate(ranges.back()));
+		}
 		osg::ref_ptr<osg::Geometry>  Generate(llhRange range);
 
 		void updateR(double value);
@@ -195,10 +223,10 @@ namespace Radar {
 		void updateA(double value);
 		void updateLineWidth(double value);
 		void updateDrawStyle(int index);
-		void updateOverlapR(double value);
-		void updateOverlapG(double value);
-		void updateOverlapB(double value);
-		void updateOverlapA(double value);
+		void updateOverlapR(double value){};
+		void updateOverlapG(double value){};
+		void updateOverlapB(double value){};
+		void updateOverlapA(double value){};
 
 		osg::ref_ptr<osg::Texture2D> sceneColorTexture;
 		osg::ref_ptr<osg::Texture2D> sceneDepthTexture;
@@ -206,7 +234,14 @@ namespace Radar {
 		osg::ref_ptr<osg::Texture2D> radarColorTexture;
 		osg::ref_ptr<osg::Texture2D> radarDepthTexture;
 
-		void setwh(int a, int b) { width = a, height = b; }
+		osg::ref_ptr<osg::Texture2D> trueradarColorTexture;
+		osg::ref_ptr<osg::Texture2D> tmpDepthTexture;
+
+		void setwh(int a, int b)
+		{
+			width = a;
+			height = b;
+		}
 		void GenerateRT_sceneDepthTexture() {
 			sceneColorTexture = new osg::Texture2D;
 			sceneColorTexture->setTextureSize(width, height);
@@ -223,6 +258,14 @@ namespace Radar {
 			radarColorTexture->setSourceType(GL_FLOAT);
 			radarColorTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
 			radarColorTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+
+			trueradarColorTexture = new osg::Texture2D;
+			trueradarColorTexture->setTextureSize(width, height);
+			trueradarColorTexture->setSourceFormat(GL_RGBA);
+			trueradarColorTexture->setInternalFormat(GL_RGBA32F_ARB);
+			trueradarColorTexture->setSourceType(GL_FLOAT);
+			trueradarColorTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+			trueradarColorTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
 
 			sceneDepthTexture = new osg::Texture2D;
 			sceneDepthTexture->setTextureSize(width, height);
@@ -243,11 +286,23 @@ namespace Radar {
 			radarDepthTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
 			radarDepthTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
 			radarDepthTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
+
+
+			tmpDepthTexture = new osg::Texture2D;
+			tmpDepthTexture->setTextureSize(width, height);
+			tmpDepthTexture->setSourceFormat(GL_DEPTH_COMPONENT);
+			tmpDepthTexture->setSourceType(GL_FLOAT);
+			tmpDepthTexture->setInternalFormat(GL_DEPTH_COMPONENT);
+			tmpDepthTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+			tmpDepthTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+			tmpDepthTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
+			tmpDepthTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
 		}
 
+
 		osg::ref_ptr<osg::Camera> addRadarDrawPass();
+		osg::ref_ptr<osg::Camera> addtrueRadarDrawPass();
 		osg::ref_ptr<osg::Camera> addBlendPass();
-		// 创建一个包含全屏四边形的几何体
 		osg::ref_ptr<osg::Geometry> createFullScreenQuad() {
 			osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
 			osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array();
@@ -267,6 +322,7 @@ namespace Radar {
 			geometry->addPrimitiveSet(quad.get());
 			return geometry;
 		}
+
 	};
 
 };

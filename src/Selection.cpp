@@ -28,6 +28,7 @@ namespace Selection {
 		osg::ref_ptr<osg::Camera> slaveCamera = this->createSegmentDrawPass(mainCamera);
 		slaveCamera->setGraphicsContext(mainCamera->getGraphicsContext());
 		viewer.addSlave(slaveCamera, false);
+
 		//root->addChild(sl->createSegmentDrawPass(camera));
 		root->addChild(this->createTrailDrawPass());
 		root->addChild(this->createCopyPass());

@@ -1431,8 +1431,8 @@ namespace VelocityFieldGPU {
 		void setLlhRange(llhRange _range) {
 			OriginalMinLat = osg::RadiansToDegrees(_range.minLatitude);
 			OriginalMaxLat = osg::RadiansToDegrees(_range.maxLatitude);
-			OriginalMinLon = osg::RadiansToDegrees(_range.minLongtitude);
-			OriginalMaxLon = osg::RadiansToDegrees(_range.maxLongtitude);
+			OriginalMinLon = osg::RadiansToDegrees(_range.minLongitude);
+			OriginalMaxLon = osg::RadiansToDegrees(_range.maxLongitude);
 			this->OriginalRange = _range;
 			this->range = _range;
 		}

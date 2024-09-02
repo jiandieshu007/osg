@@ -10,10 +10,11 @@ uniform sampler2D RadarDepth;
 
 void main() {
 
-    if( texture(ScreenDepth,v_textureCoordinates).r > texture(RadarDepth,v_textureCoordinates).r){
+    if( texture(ScreenDepth,v_textureCoordinates).r < texture(RadarDepth,v_textureCoordinates).r){
         FragColor = texture(ScreenTexture,v_textureCoordinates);
     }else{
         FragColor = texture(RadarTexture,v_textureCoordinates);
     }
+
 
 }

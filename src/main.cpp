@@ -305,13 +305,12 @@ int main(int argc, char *argv[])
 	osg::ref_ptr<osg::Group> root = new osg::Group();
 	
 	camera->setViewMatrixAsLookAt(osg::Vec3(0.0, 0, 1), osg::Vec3(0.0, 0.0, 0.0), osg::Vec3(0.0, 1, 0.0));
-	camera->setProjectionMatrixAsPerspective(45.0, 1.78, 0.1, 100.0);
+	camera->setProjectionMatrixAsPerspective(45.0, 1.78, 0.1, 1000.0);
 
 	// create earth
 	osg::ref_ptr<osg::CoordinateSystemNode> csn = createEarth();
 	root->addChild(csn);
 
-	//// 
 
 	///* Show Main Window */
 	//auto mainWindow = new main_window();
@@ -347,7 +346,7 @@ int main(int argc, char *argv[])
 	//osg::ref_ptr<osg::Geode> vlicGeode = VelocityLIC::Generate(root, camera.get(), llhRange(-10.f, 52.f, 99.f, 150.f, 100000.f, 200000.f));
 	//root->addChild(vlicGeode);
 
-	///* Show Radar */
+	/* Show Radar */
 
 	//VoxelRader::initRadar(llhRange(25.f, 40.f, 100.f, 115.f, 1.f, 6000.f));
 	//VoxelRader::addRadar(llhRange(25.f, 35.f, 105.f, 115.f, 1.f, 6000.f));
@@ -361,8 +360,8 @@ int main(int argc, char *argv[])
 	rui->setRad(ra);
 	ra->setwh(1920, 1080);
 	ra->setCamera(camera.get());
-	ra->Addllh(llhRange(25.l, 35., 105., 115., 1., 6000.));
-	ra->Addllh(llhRange(29., 39., 103., 113., 1., 6000.));
+	ra->Addllh(llhRange(25.l, 35., 105., 115., 1.,2000.));
+	ra->Addllh(llhRange(30., 39., 110., 120., 3000., 6000.));
 	ra->submit(viewer,camera ,root);
 	rui->show();
 
@@ -409,6 +408,7 @@ int main(int argc, char *argv[])
 	}
 
 	/*a.exec();*/
+
 
     return 0;
 }
