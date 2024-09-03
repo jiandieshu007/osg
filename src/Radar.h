@@ -163,36 +163,14 @@ namespace VoxelRader {
 };
 
 namespace Radar {
-
-
-
 	class Radar {
 	public:
-		Radar() {
-			float maxAngle = 91;
-			float maxLength = 20;
-			float maxSearchRange = 1;
-			float minSearchRange = 1;
-			float DetectionProbability = 99.9;
-			_radarrender = new RadarRender();
-			_radarrender->radar->MakeRGridFromFile("../data/cosec2.out");
-			_radarrender->radar->SetMaxAngle_length_box(maxAngle, maxLength, maxSearchRange, minSearchRange);
-			_radarrender->radar->UpdatePara();
-			_radarrender->radar->UpdateDValue();
-			_radarrender->SetNewPd(DetectionProbability * 0.01);
-			GenerateRT_sceneDepthTexture();
-		}
-
-		RadarRender* _radarrender;
-		llhRange _range;
-		int width=1920, height=1080;
-		const double EARTH_RADIUS = 6371.0;
+		Radar() {}
 
 		osg::Uniform* mvpUniform;
 		osg::ref_ptr<osg::Camera> maincamera;
 		void setCamera(osg::Camera* cam) {
 			maincamera = cam;
-			// generate mvp
 			mvpUniform = new osg::Uniform(osg::Uniform::FLOAT_MAT4, "mvp");
 			mvpUniform->setUpdateCallback(new ModelViewProjectionMatrixCallback(maincamera));
 		};
@@ -205,8 +183,6 @@ namespace Radar {
 		//for actualy draw 
 		osg::ref_ptr<osg::Geode> rt;
 
-		// for blend pass
-		osg::ref_ptr<osg::Geometry> forTureRadarColor;
 
 		void submit(osgViewer::Viewer& viewer, osg::Camera* mainCamera, osg::ref_ptr<osg::Group> root);
 
@@ -223,105 +199,9 @@ namespace Radar {
 		void updateA(double value);
 		void updateLineWidth(double value);
 		void updateDrawStyle(int index);
-		void updateOverlapR(double value){};
-		void updateOverlapG(double value){};
-		void updateOverlapB(double value){};
-		void updateOverlapA(double value){};
-
-		osg::ref_ptr<osg::Texture2D> sceneColorTexture;
-		osg::ref_ptr<osg::Texture2D> sceneDepthTexture;
-
-		osg::ref_ptr<osg::Texture2D> radarColorTexture;
-		osg::ref_ptr<osg::Texture2D> radarDepthTexture;
-
-		osg::ref_ptr<osg::Texture2D> trueradarColorTexture;
-		osg::ref_ptr<osg::Texture2D> tmpDepthTexture;
-
-		void setwh(int a, int b)
-		{
-			width = a;
-			height = b;
-		}
-		void GenerateRT_sceneDepthTexture() {
-			sceneColorTexture = new osg::Texture2D;
-			sceneColorTexture->setTextureSize(width, height);
-			sceneColorTexture->setSourceFormat(GL_RGBA);
-			sceneColorTexture->setInternalFormat(GL_RGBA32F_ARB);
-			sceneColorTexture->setSourceType(GL_FLOAT);
-			sceneColorTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-			sceneColorTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-
-			radarColorTexture = new osg::Texture2D;	
-			radarColorTexture->setTextureSize(width, height);
-			radarColorTexture->setSourceFormat(GL_RGBA);
-			radarColorTexture->setInternalFormat(GL_RGBA32F_ARB);
-			radarColorTexture->setSourceType(GL_FLOAT);
-			radarColorTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-			radarColorTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-
-			trueradarColorTexture = new osg::Texture2D;
-			trueradarColorTexture->setTextureSize(width, height);
-			trueradarColorTexture->setSourceFormat(GL_RGBA);
-			trueradarColorTexture->setInternalFormat(GL_RGBA32F_ARB);
-			trueradarColorTexture->setSourceType(GL_FLOAT);
-			trueradarColorTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-			trueradarColorTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-
-			sceneDepthTexture = new osg::Texture2D;
-			sceneDepthTexture->setTextureSize(width, height);
-			sceneDepthTexture->setSourceFormat(GL_DEPTH_COMPONENT);
-			sceneDepthTexture->setSourceType(GL_FLOAT);
-			sceneDepthTexture->setInternalFormat(GL_DEPTH_COMPONENT);
-			sceneDepthTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-			sceneDepthTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-			sceneDepthTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
-			sceneDepthTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
-
-			radarDepthTexture = new osg::Texture2D;
-			radarDepthTexture->setTextureSize(width, height);
-			radarDepthTexture->setSourceFormat(GL_DEPTH_COMPONENT);
-			radarDepthTexture->setSourceType(GL_FLOAT);
-			radarDepthTexture->setInternalFormat(GL_DEPTH_COMPONENT);
-			radarDepthTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-			radarDepthTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-			radarDepthTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
-			radarDepthTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
-
-
-			tmpDepthTexture = new osg::Texture2D;
-			tmpDepthTexture->setTextureSize(width, height);
-			tmpDepthTexture->setSourceFormat(GL_DEPTH_COMPONENT);
-			tmpDepthTexture->setSourceType(GL_FLOAT);
-			tmpDepthTexture->setInternalFormat(GL_DEPTH_COMPONENT);
-			tmpDepthTexture->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
-			tmpDepthTexture->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
-			tmpDepthTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
-			tmpDepthTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
-		}
-
 
 		osg::ref_ptr<osg::Camera> addRadarDrawPass();
-		osg::ref_ptr<osg::Camera> addtrueRadarDrawPass();
-		osg::ref_ptr<osg::Camera> addBlendPass();
-		osg::ref_ptr<osg::Geometry> createFullScreenQuad() {
-			osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
-			osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array();
-			osg::ref_ptr<osg::Vec2Array> vt = new osg::Vec2Array();
-			v->push_back(osg::Vec3(-1, -1, 0.0));
-			v->push_back(osg::Vec3(1, -1, 0.0));
-			v->push_back(osg::Vec3(1, 1, 0.0));
-			v->push_back(osg::Vec3(-1, 1, 0.0));
 
-			vt->push_back(osg::Vec2(0, 0));
-			vt->push_back(osg::Vec2(1, 0));
-			vt->push_back(osg::Vec2(1, 1));
-			vt->push_back(osg::Vec2(0, 1));
-			geometry->setVertexAttribArray(0, v.get(), osg::Array::BIND_PER_VERTEX);
-			geometry->setVertexAttribArray(1, vt.get(), osg::Array::BIND_PER_VERTEX);
-			osg::ref_ptr<osg::DrawArrays> quad = new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, 4);
-			geometry->addPrimitiveSet(quad.get());
-			return geometry;
-		}
 
 	};
 

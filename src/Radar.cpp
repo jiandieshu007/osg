@@ -120,103 +120,7 @@ osg::ref_ptr<osg::Camera> Radar::Radar::addRadarDrawPass()
 	return ret;
 }
 
-osg::ref_ptr<osg::Camera> Radar::Radar::addtrueRadarDrawPass()
-{
-	osg::ref_ptr<osg::Camera> ret = new osg::Camera;
 
-	forTureRadarColor = createFullScreenQuad();
-
-	osg::ref_ptr<osg::Shader> VertexShader = new osg::Shader(osg::Shader::VERTEX);
-	osg::ref_ptr<osg::Shader> FragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-	VertexShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "fullscreenQuad.vs");
-	FragmentShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "radarColorps.glsl");
-	osg::ref_ptr<osg::Program> Program = new osg::Program;
-	Program->addBindAttribLocation("Vertex", 0);
-	Program->addBindAttribLocation("TexCoord", 1);
-	Program->addShader(VertexShader);
-	Program->addShader(FragmentShader);
-
-	auto stateset = forTureRadarColor->getOrCreateStateSet();
-	stateset->setAttributeAndModes(Program);
-
-	osg::ref_ptr<osg::Uniform> uniformsceneColorTexture = new osg::Uniform("inputRadar", 0);
-	stateset->setTextureAttributeAndModes(0, radarColorTexture.get(), osg::StateAttribute::ON);
-	stateset->addUniform(uniformsceneColorTexture);
-
-	stateset->addUniform(colorUniform);
-	//stateset->addUniform(blendUniform);
-
-
-	osg::ref_ptr<osg::Geode> tmpGeode = new osg::Geode;
-	tmpGeode->addDrawable(forTureRadarColor);
-
-	osg::ref_ptr<osg::Transform> tmpNode = new osg::Transform;
-	tmpNode->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-	tmpNode->addChild(tmpGeode);
-
-
-	ret->addChild(tmpNode);
-
-	ret->setClearColor(osg::Vec4(0, 0, 0, 0));
-
-	ret->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	ret->setViewport(0, 0, width, height);
-
-	ret->setRenderOrder(osg::Camera::PRE_RENDER, 1);
-
-	ret->attach(osg::Camera::COLOR_BUFFER, trueradarColorTexture);
-	//ret->attach(osg::Camera::DEPTH_BUFFER, tmpDepthTexture);
-	ret->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
-	return ret;
-	
-}
-
-osg::ref_ptr<osg::Camera> Radar::Radar::addBlendPass()
-{
-	osg::ref_ptr<osg::Camera> ret = new osg::Camera;
-
-	auto geod = createFullScreenQuad();
-
-	osg::ref_ptr<osg::Shader> VertexShader = new osg::Shader(osg::Shader::VERTEX);
-	osg::ref_ptr<osg::Shader> FragmentShader = new osg::Shader(osg::Shader::FRAGMENT);
-	VertexShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "fullscreenQuad.vs");
-	FragmentShader->loadShaderSourceFromFile(std::string(OSG_3D_VIS_SHADER_PREFIX) + "FullScreenPS.glsl");
-	osg::ref_ptr<osg::Program> Program = new osg::Program;
-	Program->addBindAttribLocation("Vertex", 0);
-	Program->addBindAttribLocation("TexCoord", 1);
-	Program->addShader(VertexShader);
-	Program->addShader(FragmentShader);
-
-	auto stateset = geod->getOrCreateStateSet();
-	stateset->setAttributeAndModes(Program);
-
-	osg::ref_ptr<osg::Uniform> uniformsceneColorTexture = new osg::Uniform("ScreenTexture", 0);
-	stateset->setTextureAttributeAndModes(0, sceneColorTexture.get(), osg::StateAttribute::ON);
-	stateset->addUniform(uniformsceneColorTexture);
-	 
-	osg::ref_ptr<osg::Uniform> uniformradarColorTexture = new osg::Uniform("RadarTexture", 1);
-	stateset->setTextureAttributeAndModes(1, radarColorTexture.get(), osg::StateAttribute::ON);
-	stateset->addUniform(uniformradarColorTexture);
-	 
-	osg::ref_ptr<osg::Uniform> uniformsceneDepthTexture = new osg::Uniform("ScreenDepth", 2);
-	stateset->setTextureAttributeAndModes(2, sceneDepthTexture.get(), osg::StateAttribute::ON);
-	stateset->addUniform(uniformsceneDepthTexture);
-	// 
-	osg::ref_ptr<osg::Uniform> uniformradarDepthTexture = new osg::Uniform("RadarDepth", 3);
-	stateset->setTextureAttributeAndModes(3, radarDepthTexture.get(), osg::StateAttribute::ON);
-	stateset->addUniform(uniformradarDepthTexture);
-
-
-
-	osg::ref_ptr<osg::Geode> tmpGeode = new osg::Geode;
-	tmpGeode->addDrawable(geod);
-
-	osg::ref_ptr<osg::Transform> tmpNode = new osg::Transform;
-	tmpNode->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-	tmpNode->addChild(tmpGeode);
-	ret->addChild(tmpNode);
-	return ret;
-}
 
 void Radar::Radar::submit(osgViewer::Viewer& viewer, osg::Camera* mainCamera, osg::ref_ptr<osg::Group> root)
 {
@@ -234,6 +138,7 @@ void Radar::Radar::submit(osgViewer::Viewer& viewer, osg::Camera* mainCamera, os
 	//root->addChild(addtrueRadarDrawPass());
 
 	//root->addChild(addBlendPass());
+
 	rt = new osg::Geode;
 	for (int i = 0; i < ranges.size(); ++i) {
 		rt->addDrawable(Geos[i]);
@@ -257,70 +162,6 @@ void Radar::Radar::submit(osgViewer::Viewer& viewer, osg::Camera* mainCamera, os
 
 	root->addChild(rt);
 }
-
-//osg::ref_ptr<osg::Geometry>  Radar::Radar::Generate( llhRange range )
-//{
-//		osg::ref_ptr<osg::Vec2Array> m_lines_normals_pos = new osg::Vec2Array();
-//		osg::ref_ptr<osg::Vec2Array> m_lines_normals_nor = new osg::Vec2Array();
-//
-//
-//		// 求不同i的情况下，_radarrender->m_lines_normals->at(i).x()中最大值
-//		double maxX = 0;
-//		for (int i = 0; i < _radarrender->m_lines_normals->size(); i++)
-//			if (maxX < _radarrender->m_lines_normals->at(i).x())
-//				maxX = _radarrender->m_lines_normals->at(i).x();
-//
-//		for (int i = 0; i < _radarrender->m_lines_normals->size(); i++)
-//		{
-//			m_lines_normals_pos->push_back(osg::Vec2(_radarrender->m_lines_normals->at(i).x() / maxX, _radarrender->m_lines_normals->at(i).y() / maxX));
-//			m_lines_normals_nor->push_back(osg::Vec2(_radarrender->m_lines_normals->at(i).z(), _radarrender->m_lines_normals->at(i).w()));
-//		}
-//
-//		osg::ref_ptr<osg::Geode> ret = new osg::Geode;
-//
-//		std::vector<osg::ref_ptr<osg::Vec4Array>> Vec4arrays;
-//
-//		// 设置角度
-//		const float startAngle = 0;
-//		const float endAngle = 2 * M_PI;
-//		const float stepAngle = 2 * M_PI / 20.0;
-//		for (int i = 0; i + 1 < m_lines_normals_pos->size(); i ++) {
-//			osg::Vec4 v0 = osg::Vec4(m_lines_normals_pos->at(i).x(), m_lines_normals_pos->at(i).y(), m_lines_normals_nor->at(i).x(), m_lines_normals_nor->at(i).y());
-//			osg::Vec4 v1 = osg::Vec4(m_lines_normals_pos->at(i + 1).x(), m_lines_normals_pos->at(i + 1).y(), m_lines_normals_nor->at(i + 1).x(), m_lines_normals_nor->at(i + 1).y());
-//			osg::ref_ptr<osg::Vec4Array> surfacep = new osg::Vec4Array;
-//			for (int j = 0; j < 21; ++j) {
-//				float curangle = startAngle + stepAngle * i;
-//				float sinthita = sin(curangle);
-//				float costhita = cos(curangle);
-//				osg::Vec4 v00 = osg::Vec4(v0.x() * costhita, v0.y(), v0.x() * sinthita, 1.0);
-//				double x, y, z;
-//
-//				llh2xyz_Ellipsoid(range, v00.x() * 1.0, v00.y() * 1.0, v00.z() * 1.0, x, y, z);
-//				v00 = osg::Vec4(x, y, z, 1);
-//
-//				surfacep->push_back(v00);
-//				osg::Vec4 v11 = osg::Vec4(v1.x() * costhita, v1.x() * sinthita, v1.y(), 1.0);
-//				llh2xyz_Ellipsoid(range, v11.x() * 1.0, v11.y() * 1.0, v11.z() * 1.0, x, y, z);
-//				v00 = osg::Vec4(x, y, z, 1);
-//
-//				surfacep->push_back(v00);
-//			}
-//			Vec4arrays.push_back(surfacep);
-//		}
-//
-//	for(auto surfacep : Vec4arrays)
-//	{
-//		osg::ref_ptr<osg::Geometry> surfaceGeometry = new osg::Geometry;
-//		surfaceGeometry->setVertexAttribArray(0, surfacep, osg::Array::BIND_PER_VERTEX);
-//		osg::ref_ptr<osg::DrawArrays> radar_lines_to_surfaces = new osg::DrawArrays(osg::PrimitiveSet::TRIANGLE_STRIP, 0, surfacep->size() - 2);
-//		surfaceGeometry->addPrimitiveSet(radar_lines_to_surfaces);
-//		surfaceGeometry->getOrCreateStateSet()->addUniform(colorUniform);
-//
-//		ret->addDrawable(surfaceGeometry);
-//	}
-//
-//	return ret;
-//}
 
 //osg::ref_ptr<osg::Geometry>  Radar::Radar::Generate(llhRange range)
 //{
